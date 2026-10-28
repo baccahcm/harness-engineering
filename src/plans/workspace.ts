@@ -96,7 +96,13 @@ export function activePlanId(root: string): string | null {
   if (!existsSync(path)) return null;
   try {
     const value = JSON.parse(readFileSync(path, "utf8")) as { schemaVersion?: number; planId?: string };
-    return value.schemaVersion === 1 && value.planId ? value.planId : null;
+    if (value.schemaVersion !== 1 || !value.planId) return null;
+    const manifestPath = join(planWorkspaceRoot(root, value.planId), "manifest.json");
+    if (existsSync(manifestPath)) {
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { status?: string };
+      if (manifest.status === "COMPLETED") return null;
+    }
+    return value.planId;
   } catch { return null; }
 }
 

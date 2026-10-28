@@ -31,7 +31,7 @@ export function contextStatus(root: string, thresholdEstimatedTokens = 60000): C
   const sessions = registry.tasks.find((entry) => entry.taskId === task.id)?.sessions ?? [];
   const metrics = loadTurnMetrics(root).filter((record) => record.taskId === task.id);
   return sessions.map((session) => {
-    const turns = metrics.filter((record) => record.purpose === session.purpose && record.provider === session.provider && record.model === session.model && (session.purpose !== "reviewer" || (record.reviewerName ?? "") === (session.profileName ?? "")));
+    const turns = metrics.filter((record) => record.purpose === session.purpose && record.provider === session.provider && record.model === session.model && (session.purpose !== "reviewer" || (record.reviewerName ?? "") === (session.profileName ?? "")) && (record.sessionId ? record.sessionId === session.sessionId : !session.previousSessionIds?.length));
     const estimatedPromptTokens = turns.reduce((sum, record) => sum + (record.prompt?.estimatedInputTokens ?? 0), 0);
     const reportedInputs = turns.map((record) => record.usage?.inputTokens).filter((value): value is number => typeof value === "number");
     const cached = turns.map((record) => record.usage?.cachedInputTokens).filter((value): value is number => typeof value === "number");

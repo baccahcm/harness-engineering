@@ -97,6 +97,23 @@ test("workspace registry plans independent runnable tasks and scheduler respects
     assert.equal(result.results.filter((item) => item.status === "completed").length, 2);
     setWorkspaceEnabled(controller, "b", false);
     assert.equal(planWorkspaces(controller).find((item) => item.id === "b")?.runnable, false);
+
+    // Dead owner's run lease does not block scheduling readiness.
+    const leaseDir = join(a, ".harness", "state", "run-lease");
+    mkdirSync(leaseDir, { recursive: true });
+    writeFileSync(join(leaseDir, "lease.json"), JSON.stringify({ schemaVersion: 1, taskId: "a", pid: 99999999, acquiredAt: "2026-01-01T00:00:00Z" }));
+    assert.equal(planWorkspaces(controller).find((item) => item.id === "a")?.runnable, true);
+
+    // Unresolved uncertain session blocks scheduling readiness even without a live runtime process entry.
+    const { loadSessionRegistry, registerSession, markInFlight, markUncertain, saveSessionRegistry } = await import("../../src/agents/session-registry.js");
+    const registry = loadSessionRegistry(a);
+    const session = registerSession(registry, "a", { provider: "antigravity", purpose: "developer", model: "m", sessionId: "s-uncertain", workspace: a });
+    markInFlight(session, "req-uncertain");
+    markUncertain(session);
+    saveSessionRegistry(a, registry);
+    const plannedA = planWorkspaces(controller).find((item) => item.id === "a");
+    assert.equal(plannedA?.runnable, false);
+    assert.ok(plannedA?.reason?.includes("uncertain session"));
   } finally { rmSync(controller, { recursive: true, force: true }); rmSync(a, { recursive: true, force: true }); rmSync(b, { recursive: true, force: true }); }
 });
 

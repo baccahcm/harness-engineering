@@ -14,6 +14,10 @@ export function reconcileRuntimeAndSessions(root: string): RuntimeReconcileResul
   let changed = false;
   for (const task of registry.tasks) {
     for (const session of task.sessions) {
+      if (session.status === "uncertain") {
+        uncertainSessions.push(`${task.taskId}:${session.purpose}/${session.provider}/${session.model}`);
+        continue;
+      }
       if (session.status !== "in_flight" || !session.inFlight) continue;
       const runtime = byRequest.get(session.inFlight.requestId);
       // If the original harness process disappeared before it could parse and persist the provider

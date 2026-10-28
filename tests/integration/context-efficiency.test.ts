@@ -150,6 +150,24 @@ test("context status recommends explicit compaction at configured estimate", () 
     recordTurnMetric(r, { taskId: task.id, requestId: "r", provider: "antigravity", purpose: "developer", model: "m", sessionId: "s", success: true, prompt: { taskId: task.id, purpose: "developer", provider: "antigravity", model: "m", mode: "INITIAL", target: "final", reusedSession: false, stablePrefixHash: "a", promptHash: "b", estimatedInputTokens: 101, sections: ["stable-prefix"] }, responseChars: 1 });
     const status = contextStatus(r, 100);
     assert.equal(status[0].compactionRecommended, true);
+
+    compactSessionContext(r, "developer", "antigravity", "m");
+    const adapter = { provider: "antigravity", executable: "agy", detect: () => ({ provider: "antigravity", executable: "agy", available: true }), buildCommand: () => ({ executable: "agy", args: [], cwd: r }), parseResult: () => { throw new Error("unused"); }, supportsPurpose: () => true } as AgentAdapter;
+    const sessionBefore = findSession(loadSessionRegistry(r), task.id, "antigravity", "m", "developer")!;
+    const prompt = compileDeveloperPrompt(r, task, { kind: "final" }, ["test"], "antigravity", "m", sessionBefore);
+    dispatchDeveloper(r, prompt, "antigravity", "m", adapter, "post-rotate", () => ({
+      provider: "antigravity",
+      success: true,
+      sessionId: "s-rotated",
+      response: "done",
+      rawStdout: "",
+      rawStderr: "",
+      exitCode: 0,
+    }));
+    const afterRotation = contextStatus(r, 1000);
+    assert.equal(afterRotation[0].sessionId, "s-rotated");
+    assert.equal(afterRotation[0].turns, 1);
+    assert.equal(afterRotation[0].compactionRecommended, false);
   } finally { rmSync(r, { recursive: true, force: true }); }
 });
 

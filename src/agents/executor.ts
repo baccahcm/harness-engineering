@@ -1,5 +1,5 @@
-import { execFileSync } from "node:child_process";
 import type { AgentAdapter, AgentRequest, AgentTurnResult, CommandSpec } from "./types.js";
+import { execCommandSync } from "../util/command.js";
 
 export interface CommandExecution {
   stdout: string;
@@ -9,10 +9,8 @@ export interface CommandExecution {
 
 export function executeCommand(spec: CommandSpec): CommandExecution {
   try {
-    const stdout = execFileSync(spec.executable, spec.args, {
+    const stdout = execCommandSync(spec.executable, spec.args, {
       cwd: spec.cwd,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
       env: spec.env ? { ...process.env, ...spec.env } : process.env,
     });
     return { stdout, stderr: "", exitCode: 0 };

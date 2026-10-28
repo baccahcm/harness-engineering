@@ -18,4 +18,22 @@ test("YAML subset omits undefined optional fields", () => {
   const rendered = stringifyYaml(value);
   assert.ok(rendered.includes("keep: yes"));
   assert.equal(rendered.includes("optional"), false);
+  const allUndefined = { a: undefined, b: undefined } as unknown as any;
+  assert.equal(stringifyYaml(allUndefined), "{}");
+  assert.deepEqual(parseYaml(stringifyYaml(allUndefined)), {});
+});
+
+test("YAML subset round trips quoted array strings with colons and nested first-field objects in arrays", () => {
+  const value = {
+    urls: ["a:b", "https://example.com:8443/path", "plain"],
+    checkpoints: [
+      {
+        scope: { include: ["src/**"], exclude: ["src/generated/**"] },
+        id: "C1",
+        verdict: "PENDING",
+      },
+    ],
+  };
+  const encoded = stringifyYaml(value);
+  assert.deepEqual(parseYaml(encoded), value);
 });

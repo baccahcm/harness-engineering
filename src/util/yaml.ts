@@ -28,10 +28,11 @@ export function stringifyYaml(value: YamlValue, indent = 0): string {
     }).join("\n");
   }
   if (value !== null && typeof value === "object") {
-    if (Object.keys(value).length === 0) return `${pad}{}`;
-    return Object.entries(value).filter(([, item]) => item !== undefined).map(([key, item]) => {
+    const entries = Object.entries(value).filter(([, item]) => item !== undefined);
+    if (entries.length === 0) return `${pad}{}`;
+    return entries.map(([key, item]) => {
       if (Array.isArray(item) && item.length === 0) return `${pad}${key}: []`;
-      if (item !== null && typeof item === "object" && !Array.isArray(item) && Object.keys(item).length === 0) return `${pad}${key}: {}`;
+      if (item !== null && typeof item === "object" && !Array.isArray(item) && Object.values(item).filter((v) => v !== undefined).length === 0) return `${pad}${key}: {}`;
       if (item !== null && typeof item === "object") return `${pad}${key}:\n${stringifyYaml(item, indent + 2)}`;
       return `${pad}${key}: ${scalar(item as Scalar)}`;
     }).join("\n");
@@ -61,25 +62,32 @@ export function parseYaml(text: string): YamlValue {
 
   function parseBlock(indent: number): YamlValue {
     if (pos >= lines.length) return {};
+    if (lines[pos].indent === indent && (lines[pos].text === "{}" || lines[pos].text === "[]")) {
+      return parseScalar(lines[pos++].text);
+    }
     const arrayMode = lines[pos].indent === indent && lines[pos].text.startsWith("- ");
     if (arrayMode) {
       const arr: YamlValue[] = [];
       while (pos < lines.length && lines[pos].indent === indent && lines[pos].text.startsWith("- ")) {
         const line = lines[pos++];
         const rest = line.text.slice(2).trim();
-        if (!rest) arr.push(parseBlock(indent + 2));
-        else if (rest.includes(":")) {
+        if (!rest) arr.push(pos < lines.length && lines[pos].indent > indent ? parseBlock(lines[pos].indent) : {});
+        else if (!rest.startsWith('"') && rest.includes(":")) {
           const idx = rest.indexOf(":");
           const key = rest.slice(0, idx).trim();
           const val = rest.slice(idx + 1).trim();
-          const obj: Record<string, YamlValue> = { [key]: val ? parseScalar(val) : (pos < lines.length && lines[pos].indent > indent ? parseBlock(indent + 2) : {}) };
+          const hasNested = pos < lines.length && (
+            lines[pos].indent > indent + 2 ||
+            (lines[pos].indent === indent + 2 && lines[pos].text.startsWith("- "))
+          );
+          const obj: Record<string, YamlValue> = { [key]: val ? parseScalar(val) : (hasNested ? parseBlock(lines[pos].indent) : {}) };
           while (pos < lines.length && lines[pos].indent === indent + 2 && !lines[pos].text.startsWith("- ")) {
             const child = lines[pos++];
             const ci = child.text.indexOf(":");
             if (ci < 0) throw new Error(`Unsupported YAML at line ${child.line}`);
             const ck = child.text.slice(0, ci).trim();
             const cv = child.text.slice(ci + 1).trim();
-            obj[ck] = cv ? parseScalar(cv) : parseBlock(indent + 4);
+            obj[ck] = cv ? parseScalar(cv) : (pos < lines.length && lines[pos].indent > indent + 2 ? parseBlock(lines[pos].indent) : {});
           }
           arr.push(obj);
         } else arr.push(parseScalar(rest));

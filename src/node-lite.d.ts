@@ -18,7 +18,7 @@ declare function clearInterval(handle: any): void;
 
 declare module "node:fs" {
   export function existsSync(path: string): boolean;
-  export function readFileSync(path: string, encoding: string): string;
+  export function readFileSync(path: string, encoding?: string): string;
   export function linkSync(existingPath: string, newPath: string): void;
   export function writeFileSync(path: string, data: string): void;
   export function appendFileSync(path: string, data: string): void;
@@ -49,7 +49,7 @@ declare const Buffer: {
 };
 
 declare module "node:crypto" {
-  export function createHash(algorithm: string): { update(data: string): any; digest(encoding: "hex"): string };
+  export function createHash(algorithm: string): { update(data: any): any; digest(encoding: "hex"): string };
   export function createPublicKey(key: string): { export(options: { type: string; format: string }): { toString(): string } };
   export function sign(algorithm: null, data: any, key: string): { toString(encoding: "base64"): string };
   export function verify(algorithm: null, data: any, key: string, signature: any): boolean;

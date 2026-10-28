@@ -1,7 +1,7 @@
-import { execFileSync } from "node:child_process";
 import { classifyProviderFailure } from "./failures.js";
 import type { AgentAdapter, AgentCapability, AgentRequest, AgentTurnResult, CommandSpec, ModelCatalogProbe } from "./types.js";
 import { extractProviderUsage } from "./usage.js";
+import { execCommandSync } from "../util/command.js";
 
 
 export function parseAntigravityModels(output: string): string[] {
@@ -23,8 +23,8 @@ export class AntigravityAdapter implements AgentAdapter {
   detect(): AgentCapability {
     try {
       let version = "";
-      try { version = execFileSync(this.executable, ["version"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim(); }
-      catch { version = execFileSync(this.executable, ["--version"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim(); }
+      try { version = execCommandSync(this.executable, ["version"]).trim(); }
+      catch { version = execCommandSync(this.executable, ["--version"]).trim(); }
       return { provider: this.provider, executable: this.executable, available: true, version };
     } catch (err) {
       return { provider: this.provider, executable: this.executable, available: false, detail: err instanceof Error ? err.message : String(err) };
@@ -36,7 +36,7 @@ export class AntigravityAdapter implements AgentAdapter {
   probeModels(): ModelCatalogProbe {
     const probedAt = new Date().toISOString();
     try {
-      const output = execFileSync(this.executable, ["models"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+      const output = execCommandSync(this.executable, ["models"]);
       const models = parseAntigravityModels(output);
       if (!models.length) return { schemaVersion: 1, provider: this.provider, status: "error", models: [], source: "provider-cli", machineReadable: false, probedAt, detail: "agy models returned no parseable model IDs" };
       return { schemaVersion: 1, provider: this.provider, status: "available", models, source: "provider-cli", machineReadable: false, probedAt, detail: "Parsed conservatively from agy models human-readable output; a fresh cached catalog is enforced before async dispatch." };

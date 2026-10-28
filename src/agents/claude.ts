@@ -1,7 +1,7 @@
-import { execFileSync } from "node:child_process";
 import { classifyProviderFailure } from "./failures.js";
 import type { AgentAdapter, AgentCapability, AgentRequest, AgentTurnResult, CommandSpec } from "./types.js";
 import { extractProviderUsage } from "./usage.js";
+import { execCommandSync } from "../util/command.js";
 
 export class ClaudeAdapter implements AgentAdapter {
   readonly provider = "claude" as const;
@@ -9,7 +9,7 @@ export class ClaudeAdapter implements AgentAdapter {
 
   detect(): AgentCapability {
     try {
-      const version = execFileSync(this.executable, ["--version"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+      const version = execCommandSync(this.executable, ["--version"]).trim();
       return { provider: this.provider, executable: this.executable, available: true, version };
     } catch (err) {
       return { provider: this.provider, executable: this.executable, available: false, detail: err instanceof Error ? err.message : String(err) };

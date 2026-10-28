@@ -4,8 +4,8 @@
     "name": "engineering-harness",
     "version": "0.8.3"
   },
-  "generatedAt": "2026-10-28T04:44:40.230Z",
-  "sourceDigest": "565a2e485eadd64f6ae93a940b8edd0a70e5b37de2dfa7a5711282f206bebf0c",
+  "generatedAt": "2026-10-28T06:49:46.402Z",
+  "sourceDigest": "461d6926f7b79b5319f7bd5789497b45d70ff7875ef0d04d4d1729b57bc4ecf5",
   "sourceFiles": [
     {
       "path": "HANDOFF.md",
@@ -124,8 +124,8 @@
     },
     {
       "path": "src/agents/antigravity.ts",
-      "sha256": "7ef4ad9300e857436da38caf343087d000ae5c5a4cd50eb066e82e16acd6f813",
-      "bytes": 4224
+      "sha256": "805913ab38714a7dfa3c05334a09ef5f2105116dc6c59ea236d96292fcacb436",
+      "bytes": 4065
     },
     {
       "path": "src/agents/async-executor.ts",
@@ -139,13 +139,13 @@
     },
     {
       "path": "src/agents/claude.ts",
-      "sha256": "dfc90192b2bb82535c8d9ba808c4e58c8d652424b4ceae5015d07c5f81112ee1",
-      "bytes": 2555
+      "sha256": "e0a31684792eb848d040043b2503b553b125f639c94a117bd28787e138484153",
+      "bytes": 2504
     },
     {
       "path": "src/agents/codex.ts",
-      "sha256": "b0e7a4b9d60ab60388b914783fda29eda67f867f2e3bee443979d96ef86bfb90",
-      "bytes": 3079
+      "sha256": "3b9fb1ffd37b951fcc6a12c6d18fce3f9ba66b81a084eeaaae0ff82f58ff6dda",
+      "bytes": 3028
     },
     {
       "path": "src/agents/developer-dispatcher.ts",
@@ -154,8 +154,8 @@
     },
     {
       "path": "src/agents/executor.ts",
-      "sha256": "50aa818c0b6785b23889e664b7a3034d7af9d16ff4d494d8de22c002a8e7e840",
-      "bytes": 1300
+      "sha256": "bef7df4a5a23a487541f74b13cb4defcf1695369d9bbc1c4b2491fed50906af3",
+      "bytes": 1241
     },
     {
       "path": "src/agents/failures.ts",
@@ -249,13 +249,13 @@
     },
     {
       "path": "src/evidence/runner.ts",
-      "sha256": "52f444c1416b1ad8ed4f58b7b0917cb1377997ce892447c11660265387c74d51",
-      "bytes": 4543
+      "sha256": "2b8bfc965554598879725e60c0d69c08061b5c215618fdeccc45790fe350cc3a",
+      "bytes": 4496
     },
     {
       "path": "src/git/git.ts",
-      "sha256": "7703c1743c8e6c8fa2934f4c58a9404a31a418fe09a9111a8e02849c2cb70c7f",
-      "bytes": 4785
+      "sha256": "d2a6e078cfca4c094a45cfd0949533f091746151c6e77cee8c611cd0140b3975",
+      "bytes": 5769
     },
     {
       "path": "src/installer/install.ts",
@@ -274,8 +274,8 @@
     },
     {
       "path": "src/node-lite.d.ts",
-      "sha256": "494626cd4630ae79b7c01fc74fccef93143991090e2bb5aef09c360e03ba302a",
-      "bytes": 3675
+      "sha256": "929e44145980c564dc9384857c6e9dc1aa2fe528d777139bf1eb8910eaf1e004",
+      "bytes": 3672
     },
     {
       "path": "src/operator/dashboard.ts",
@@ -289,8 +289,8 @@
     },
     {
       "path": "src/orchestration/run.ts",
-      "sha256": "e7dc1632790a87644434dd774b02e3cf48abb2636baa005a8f2a402ee0c4c488",
-      "bytes": 25747
+      "sha256": "dfbca9f75dcf6b2c09d89f9cdb0f9b4cde333764658a44cb5c8bd63b7ab4aed4",
+      "bytes": 25746
     },
     {
       "path": "src/plans/analyzer.ts",
@@ -324,8 +324,8 @@
     },
     {
       "path": "src/plans/workspace.ts",
-      "sha256": "05b3a70161e6f10c58d9adc1727ca19c8e7afd685310b1db2f4e08d6c6d7b4f2",
-      "bytes": 11118
+      "sha256": "7f0bec8d42647346ab28441489669e4b03ad58ffb89dbff9d1bfe62ce5a6c09b",
+      "bytes": 11411
     },
     {
       "path": "src/project-detector/detect.ts",
@@ -339,8 +339,8 @@
     },
     {
       "path": "src/prompts/context.ts",
-      "sha256": "ac18aee87387a24b3bc20569365de5978c06793d19b3cf4e41a918f0999efef6",
-      "bytes": 7230
+      "sha256": "5335c6696e1ff6d7c237b897c52685b74492e52ff31447f4da540bd05531d7cd",
+      "bytes": 7331
     },
     {
       "path": "src/prompts/plans.ts",
@@ -359,8 +359,8 @@
     },
     {
       "path": "src/release/sigstore.ts",
-      "sha256": "b6cc26b9e9a290fec0484f9a1e99d95b81e74c6dc62af5cc372a1249122ec9ec",
-      "bytes": 2533
+      "sha256": "90e099b2ba4bd662799cf5a03aabc8441383181e8fe2e7c34d4d21355732f04a",
+      "bytes": 2482
     },
     {
       "path": "src/review/artifacts.ts",
@@ -374,8 +374,8 @@
     },
     {
       "path": "src/review/orchestrator.ts",
-      "sha256": "ebcc61b43f198e85194bdeb478338af9a47044ba54f55f2752c45b67594599a8",
-      "bytes": 24000
+      "sha256": "11b6762c565ab731ddba2c6da5656e3cdaddf68f444ae890652f31a67ad8a209",
+      "bytes": 24101
     },
     {
       "path": "src/review/packet.ts",
@@ -404,18 +404,18 @@
     },
     {
       "path": "src/runtime/process-runner.ts",
-      "sha256": "666f4df1d9830ca0717ba01c84fd2809deae4eb6e47b16fe1aee09d83fe90c55",
-      "bytes": 5167
+      "sha256": "6485065034ae035706c7759651a9e73d0021450100d964f9c62c920907ce056f",
+      "bytes": 5790
     },
     {
       "path": "src/runtime/recovery.ts",
-      "sha256": "5cb8c75dad11cf3ea60aa3f2103bb513dca055f60aadce7294309ce8830ddd68",
-      "bytes": 1527
+      "sha256": "f4ff97ef2bfd07bc01c3800ecedba8d05833db32b7b3612e8650d3fa690c2df9",
+      "bytes": 1703
     },
     {
       "path": "src/runtime/run-lease.ts",
-      "sha256": "6e05a0e4be80c366f63c5fe9c86c81af983e4710ef9f0d7ac0b7edb5294b4172",
-      "bytes": 5685
+      "sha256": "25196fe5a1afe4e9705eacdfe6718f9acc870d7408f82570b5e46188443f4b07",
+      "bytes": 5684
     },
     {
       "path": "src/scheduler/run.ts",
@@ -424,13 +424,18 @@
     },
     {
       "path": "src/scheduler/workspaces.ts",
-      "sha256": "181c0f9465bfc450e0db07523313ac72b60d9214bbe6a7763f0290519ad2f084",
-      "bytes": 5027
+      "sha256": "44f412f69ccb98151e028d8a12ac59d6b9c516955353ae3a3026eddda8ae2ae5",
+      "bytes": 5408
+    },
+    {
+      "path": "src/util/command.ts",
+      "sha256": "6b72f49af89a93a13cf9b854ddfe08ddcd697525044e159e47f25f1dacaede2e",
+      "bytes": 5074
     },
     {
       "path": "src/util/yaml.ts",
-      "sha256": "61f27d56035d76e4f4d0cc604585901333a822f779de0ed5a5f30a928236643d",
-      "bytes": 4771
+      "sha256": "02ac51536e7aab766b0e3c39c99995bdae2f592547bdb75aaf52755c8b451d92",
+      "bytes": 5290
     },
     {
       "path": "templates/TEAM-WORKFLOW-COMMANDS.md",
@@ -454,18 +459,18 @@
     },
     {
       "path": "tests/integration/async-workflow.test.ts",
-      "sha256": "8ade3db397aeb143d43e2e9caa6562f6bfc3fd24516c0b9e6d072859d07cbbd5",
-      "bytes": 5679
+      "sha256": "6eea954976b8a47bbbc89d066ed7567c90475e40387ecb25065ccd860d371f0e",
+      "bytes": 5678
     },
     {
       "path": "tests/integration/context-efficiency.test.ts",
-      "sha256": "13d251753ea5218074226b2b6d79670127d1d2cb9fb2fc0c23c0cfa7fef30d6f",
-      "bytes": 10347
+      "sha256": "34c3d13fbfed93959fb6d4957a6af424270c8295d6ebf23244cd477f1548072e",
+      "bytes": 11422
     },
     {
       "path": "tests/integration/evidence.test.ts",
-      "sha256": "a9fb3ca68b676d0fdb2ff7e3514358b7f7d1284006ccac1386857047d41cbf57",
-      "bytes": 1572
+      "sha256": "0a85f5e189dfec18f2b0e520bc0d6d2843fd1ab9fbd34595fa9d2c5f9ec82a99",
+      "bytes": 2602
     },
     {
       "path": "tests/integration/installer.test.ts",
@@ -484,8 +489,8 @@
     },
     {
       "path": "tests/integration/plan-workspace.test.ts",
-      "sha256": "40248d5cfdd7bcf499f44cc6b346061e58398b806f7909694293ccd85f5a5091",
-      "bytes": 10112
+      "sha256": "804333002228561d9219084e26adc546c364042702427b98cdb2d3aea2955e9f",
+      "bytes": 10357
     },
     {
       "path": "tests/integration/profiles.test.ts",
@@ -494,18 +499,18 @@
     },
     {
       "path": "tests/integration/run-workflow.test.ts",
-      "sha256": "3d3d1c7399f3b281796af9fa1d397ea750776595c0d32552d742579b0fbb7c0d",
-      "bytes": 9024
+      "sha256": "e644efa69c96a5a1b5ca1a463c29c29794e27c698ed5ba4ee07b9097d8d99990",
+      "bytes": 9023
     },
     {
       "path": "tests/integration/runtime-reliability.test.ts",
-      "sha256": "807544d25ec3a97885c578398cbda31a3782f059819f43212d6604689bef2134",
-      "bytes": 10252
+      "sha256": "4a1f8bc4c0460ee84f54cc25b201305b6881cfa991413e1c5c42e2f6a567ede9",
+      "bytes": 10251
     },
     {
       "path": "tests/integration/scoped-ownership.test.ts",
-      "sha256": "bddb8664fa7a1a7af8ff6efc58204d0725c4f04663a01b46c3d223d11684ce43",
-      "bytes": 4037
+      "sha256": "da3563898eea1f6b17e1b85de4c34785f6bfd391d82e7e53b0703045036adc5f",
+      "bytes": 6922
     },
     {
       "path": "tests/integration/store.test.ts",
@@ -519,8 +524,8 @@
     },
     {
       "path": "tests/integration/v08-platform.test.ts",
-      "sha256": "5d49c8650b34df3ff9f0e898652d33a0b39726062bc3d13f2ab9fd82c8b4a219",
-      "bytes": 6699
+      "sha256": "fd6a5d3852749d694bd87b992c5c55852b70f935f4819b089e48dd073355623f",
+      "bytes": 7887
     },
     {
       "path": "tests/unit/adapters.test.ts",
@@ -569,8 +574,8 @@
     },
     {
       "path": "tests/unit/yaml.test.ts",
-      "sha256": "10b9029bfc69aa71652a3802ef1b0842a95d4d1f39ebc5ce47267a09f1f27010",
-      "bytes": 906
+      "sha256": "b9d92ea70250880a313b6de5dda20d59a4429933c8d8bd5ec47713b00d709f68",
+      "bytes": 1544
     },
     {
       "path": "tsconfig.json",
@@ -579,13 +584,13 @@
     }
   ],
   "git": {
-    "repository": false,
-    "head": null,
-    "dirty": false
+    "repository": true,
+    "head": "64238cba0a7dd1aaab63d53c0993cd24c195c998",
+    "dirty": true
   },
   "build": {
-    "node": "v22.16.0",
-    "platform": "linux",
+    "node": "v22.14.0",
+    "platform": "win32",
     "arch": "x64",
     "recommendedCommand": "npm run release:check"
   }

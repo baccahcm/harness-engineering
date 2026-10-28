@@ -1,13 +1,13 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { execFileSync } from "node:child_process";
 import { HarnessError } from "../core/errors.js";
 import { releaseDir } from "./provenance.js";
+import { execCommandSync } from "../util/command.js";
 
 export interface SigstoreResult { executable: string; bundlePath: string; signedFile: string; output: string }
 export interface SigstoreVerifyOptions { identity?: string; issuer?: string }
 type Exec = (file: string, args: string[]) => string;
-const defaultExec: Exec = (file, args) => execFileSync(file, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+const defaultExec: Exec = (file, args) => execCommandSync(file, args);
 
 export function detectCosign(executable = "cosign", exec: Exec = defaultExec): { available: boolean; detail: string } {
   try { return { available: true, detail: exec(executable, ["version"]).trim() }; }

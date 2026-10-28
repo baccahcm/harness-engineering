@@ -104,6 +104,10 @@ test("manual non-plan task after a completed plan returns to project-global runt
     await importPlan(r, "PLAN.md", { id: "finished-plan", planner: { provider: "codex", model: "planner" }, responseOverride: response("Finished", "done") }); approvePlan(r);
     const fakeRun = async (workspace: string): Promise<any> => { const task = loadActiveTask(workspace)!; const done = { ...task, status: "COMPLETED" as const }; saveActiveTask(workspace, done); return { task: done, developerTurns: [], evidence: [], reviews: [], runState: { taskId: task.id, status: "completed", phase: "COMPLETED", round: 0, updatedAt: new Date().toISOString() } }; };
     await runPlan(r, {}, fakeRun as any);
+    archiveActiveTask(r);
+    assert.equal(loadActivePlan(r)?.id, "finished-plan");
+    assert.equal(eventsPath(r), join(r, ".harness", "events", "events.jsonl"));
+    assert.equal(metricsPath(r), join(r, ".harness", "metrics", "turns.jsonl"));
     const manual = { id: "manual", title: "Manual", status: "IN_PROGRESS", review: { level: "NONE", reason: "manual", selectedBy: "user" }, acceptance: [], checkpoints: [], finalReview: { verdict: "PENDING" } } as any;
     saveActiveTask(r, manual);
     const state = saveRunState(r, { taskId: manual.id, status: "running", phase: "DEVELOP", round: 0 });

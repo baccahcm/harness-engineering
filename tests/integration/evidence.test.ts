@@ -32,3 +32,28 @@ test("evidence runner records exit and source stability", () => {
     assert.equal(inspectGit(root).fingerprint, evidence.sourceAfter.fingerprint);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test("Windows command resolver unwraps npm node shims and safely quotes batch arguments", () => {
+  const root = repo();
+  try {
+    const scriptPath = join(root, "cli.js");
+    const npmShimPath = join(root, "tool.cmd");
+    const rawBatchPath = join(root, "raw.cmd");
+    writeFileSync(scriptPath, 'console.log(JSON.stringify(process.argv.slice(2)));\n');
+    writeFileSync(
+      npmShimPath,
+      '@ECHO off\r\nSET dp0=%~dp0\r\n"%_prog%"  "%dp0%\\cli.js" %*\r\n',
+    );
+    writeFileSync(
+      rawBatchPath,
+      `@echo off\r\n"${process.execPath}" "${scriptPath}" %*\r\n`,
+    );
+
+    if (process.platform === "win32") {
+      const shimEvidence = runEvidenceCommand(root, `${JSON.stringify(npmShimPath)} "hello:world" "a&b"`);
+      assert.equal(shimEvidence.exitCode, 0);
+      const rawEvidence = runEvidenceCommand(root, `${JSON.stringify(rawBatchPath)} "quote\\"arg" "a&b|c<d>e^f(g)" "%PATH%"`);
+      assert.equal(rawEvidence.exitCode, 0);
+    }
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

@@ -129,7 +129,8 @@ function finishApprovedTarget(task: TaskState, target: ReviewTarget, sourceFinge
 function finishRevisedTarget(task: TaskState, target: ReviewTarget, dispatchResult: ReviewDispatchResult, parsed: StructuredReviewResult): TaskState {
   task = applyReviewVerdict(task, "reviewer", "REVISE", target.kind === "checkpoint" ? target.checkpointId : undefined);
   task = setRequiredRecheck(task, target, dispatchResult, parsed);
-  return transitionTask(task, "IN_PROGRESS");
+  task = transitionTask(task, "IN_PROGRESS");
+  return target.kind === "checkpoint" ? { ...task, activeCheckpointId: target.checkpointId } : task;
 }
 
 function approvalPolicy(root: string, task: TaskState, candidates: ReviewerCandidate[]): { approvalsRequired: number; maxReviewers: number } {

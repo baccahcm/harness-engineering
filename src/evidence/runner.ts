@@ -1,10 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { inspectGit, type GitSnapshot } from "../git/git.js";
 import { HarnessError } from "../core/errors.js";
 import { activeTaskScopedPath, relativeHarnessPath } from "../plans/workspace.js";
+import { execCommandSync } from "../util/command.js";
 
 export interface EvidenceRun {
   schemaVersion: 1;
@@ -89,7 +89,7 @@ export function runEvidenceCommand(root: string, command: string): EvidenceRun {
   let stderr = "";
   let exitCode = 0;
   try {
-    stdout = execFileSync(tokens[0], tokens.slice(1), { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    stdout = execCommandSync(tokens[0], tokens.slice(1), { cwd: root });
   } catch (err) {
     const e = err as { status?: number; stdout?: string | { toString(): string }; stderr?: string | { toString(): string }; message?: string };
     stdout = typeof e.stdout === "string" ? e.stdout : e.stdout?.toString() ?? "";

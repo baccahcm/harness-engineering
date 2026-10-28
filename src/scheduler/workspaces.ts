@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { HarnessError } from "../core/errors.js";
 import { loadActiveTask } from "../core/store.js";
+import { isProcessAlive } from "../runtime/process-registry.js";
 import { loadRunLease } from "../runtime/run-lease.js";
 import { reconcileRuntimeAndSessions } from "../runtime/recovery.js";
 
@@ -40,9 +41,11 @@ export function planWorkspaces(root: string): WorkspacePlanEntry[] {
     if (!task) return { id: workspace.id, root: workspace.root, enabled: true, initialized: true, runnable: false, reason: "no active task" };
     if (task.status === "DRAFT" || task.status === "BLOCKED" || task.status === "COMPLETED") return { id: workspace.id, root: workspace.root, enabled: true, initialized: true, taskId: task.id, taskStatus: task.status, runnable: false, reason: `task ${task.status}` };
     const lease = loadRunLease(workspace.root);
-    if (lease) return { id: workspace.id, root: workspace.root, enabled: true, initialized: true, taskId: task.id, taskStatus: task.status, runnable: false, reason: `run lease held pid=${lease.pid}` };
-    const unresolved = reconcileRuntimeAndSessions(workspace.root).processes.filter((item) => item.status === "running" || item.status === "uncertain");
+    if (lease && isProcessAlive(lease.pid)) return { id: workspace.id, root: workspace.root, enabled: true, initialized: true, taskId: task.id, taskStatus: task.status, runnable: false, reason: `run lease held pid=${lease.pid}` };
+    const recovery = reconcileRuntimeAndSessions(workspace.root);
+    const unresolved = recovery.processes.filter((item) => item.status === "running" || item.status === "uncertain");
     if (unresolved.length) return { id: workspace.id, root: workspace.root, enabled: true, initialized: true, taskId: task.id, taskStatus: task.status, runnable: false, reason: `${unresolved.length} unresolved runtime process(es)` };
+    if (recovery.uncertainSessions.length) return { id: workspace.id, root: workspace.root, enabled: true, initialized: true, taskId: task.id, taskStatus: task.status, runnable: false, reason: `${recovery.uncertainSessions.length} uncertain session(s)` };
     return { id: workspace.id, root: workspace.root, enabled: true, initialized: true, taskId: task.id, taskStatus: task.status, runnable: true };
   });
 }

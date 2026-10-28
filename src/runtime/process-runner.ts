@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { AgentProvider, AgentPurpose, CommandSpec } from "../agents/types.js";
 import { findRuntimeProcess, markRuntimeTerminal, registerRuntimeProcess } from "./process-registry.js";
 import { executionScopedPath } from "../plans/workspace.js";
+import { resolveCommandSpec } from "../util/command.js";
 
 export interface StreamingRunMetadata {
   requestId: string;
@@ -48,10 +49,21 @@ export async function runStreamingCommand(
   writeFileSync(stderrPath, "");
 
   return await new Promise<StreamingCommandResult>((resolve) => {
-    const child = spawn(spec.executable, spec.args, {
+    const env = spec.env ? { ...process.env, ...spec.env } : process.env;
+    let resolved: ReturnType<typeof resolveCommandSpec>;
+    try {
+      resolved = resolveCommandSpec(spec.executable, spec.args, { cwd: spec.cwd, env });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      writeFileSync(stderrPath, `${message}\n`);
+      resolve({ stdout: "", stderr: message, exitCode: 1, pid: -1, timedOut: false, cancelled: false, stdoutPath, stderrPath });
+      return;
+    }
+    const child = spawn(resolved.executable, resolved.args, {
       cwd: spec.cwd,
       stdio: ["ignore", "pipe", "pipe"],
-      env: spec.env ? { ...process.env, ...spec.env } : process.env,
+      env,
+      ...(resolved.windowsVerbatimArguments ? { windowsVerbatimArguments: true } : {}),
     });
     const pid = child.pid ?? -1;
     let stdout = "";
