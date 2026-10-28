@@ -4,8 +4,8 @@
     "name": "engineering-harness",
     "version": "0.8.3"
   },
-  "generatedAt": "2026-10-28T04:07:27.282Z",
-  "sourceDigest": "46d12c5ba448c8b338e1b39a9dc88db11b313197f2fe2e8bafb848fe1dd69a31",
+  "generatedAt": "2026-10-28T04:44:40.230Z",
+  "sourceDigest": "565a2e485eadd64f6ae93a940b8edd0a70e5b37de2dfa7a5711282f206bebf0c",
   "sourceFiles": [
     {
       "path": "HANDOFF.md",
@@ -274,8 +274,8 @@
     },
     {
       "path": "src/node-lite.d.ts",
-      "sha256": "ccff6c2c5311f36b2e29bd739816f420c572e7558e9456daf98359a50ae4faed",
-      "bytes": 3623
+      "sha256": "494626cd4630ae79b7c01fc74fccef93143991090e2bb5aef09c360e03ba302a",
+      "bytes": 3675
     },
     {
       "path": "src/operator/dashboard.ts",
@@ -289,8 +289,8 @@
     },
     {
       "path": "src/orchestration/run.ts",
-      "sha256": "491ba531e79543c9333111b5c00b19c410d8799feca78deb6d472189b6f2e70a",
-      "bytes": 24887
+      "sha256": "e7dc1632790a87644434dd774b02e3cf48abb2636baa005a8f2a402ee0c4c488",
+      "bytes": 25747
     },
     {
       "path": "src/plans/analyzer.ts",
@@ -414,8 +414,8 @@
     },
     {
       "path": "src/runtime/run-lease.ts",
-      "sha256": "806a358a17e674e4f47c483a4b38a250e780456f7dd34317cbc901509d989409",
-      "bytes": 3027
+      "sha256": "6e05a0e4be80c366f63c5fe9c86c81af983e4710ef9f0d7ac0b7edb5294b4172",
+      "bytes": 5685
     },
     {
       "path": "src/scheduler/run.ts",
@@ -454,8 +454,8 @@
     },
     {
       "path": "tests/integration/async-workflow.test.ts",
-      "sha256": "6b8806b57e2baeaaf2c2cbb431a185eb85ef869969b980f76088371d76e0dd7e",
-      "bytes": 3662
+      "sha256": "8ade3db397aeb143d43e2e9caa6562f6bfc3fd24516c0b9e6d072859d07cbbd5",
+      "bytes": 5679
     },
     {
       "path": "tests/integration/context-efficiency.test.ts",
@@ -494,13 +494,13 @@
     },
     {
       "path": "tests/integration/run-workflow.test.ts",
-      "sha256": "3ff2c887111dcfb75e8e52c0b8c470225a54889f460a4084b4f28b04850279ba",
-      "bytes": 8898
+      "sha256": "3d3d1c7399f3b281796af9fa1d397ea750776595c0d32552d742579b0fbb7c0d",
+      "bytes": 9024
     },
     {
       "path": "tests/integration/runtime-reliability.test.ts",
-      "sha256": "382e80d709666bcdbc0d7748aa8fca553b011bacf821531774349d4f019154d9",
-      "bytes": 6230
+      "sha256": "807544d25ec3a97885c578398cbda31a3782f059819f43212d6604689bef2134",
+      "bytes": 10252
     },
     {
       "path": "tests/integration/scoped-ownership.test.ts",

@@ -6,8 +6,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { initProject } from "../../src/installer/install.js";
 import { loadConfig, saveConfig } from "../../src/core/config.js";
-import { createTask } from "../../src/core/task.js";
-import { saveActiveTask } from "../../src/core/store.js";
+import { addCheckpoint, createTask, setCheckpointScope } from "../../src/core/task.js";
+import { loadActiveTask, saveActiveTask } from "../../src/core/store.js";
 import { transitionTask } from "../../src/core/state-machine.js";
 import { runWorkflowAsync } from "../../src/orchestration/run.js";
 import { orchestrateReview } from "../../src/review/orchestrator.js";
@@ -34,8 +34,9 @@ function repo(): string {
 }
 
 const approved = JSON.stringify({ schemaVersion: 1, verdict: "APPROVED", summary: "approved", findings: [], evidence: ["inspected source"], notChecked: [] });
-function dispatch(): ReviewDispatchResult {
-  return { reviewer: { provider: "codex", model: "review" }, attempts: [{ reviewer: { provider: "codex", model: "review" } }], result: { provider: "codex", success: true, sessionId: "review-session", response: approved, rawStdout: approved, rawStderr: "", exitCode: 0 } };
+const revise = JSON.stringify({ schemaVersion: 1, verdict: "REVISE", summary: "fix required", findings: [{ id: "F1", severity: "medium", location: "src/a.ts:1", description: "needs correction", requiredVerification: "unit" }], evidence: ["source inspected"], notChecked: [] });
+function dispatch(response = approved): ReviewDispatchResult {
+  return { reviewer: { provider: "codex", model: "review" }, attempts: [{ reviewer: { provider: "codex", model: "review" } }], result: { provider: "codex", success: true, sessionId: "review-session", response, rawStdout: response, rawStderr: "", exitCode: 0 } };
 }
 const adapters = { antigravity: { provider: "antigravity", executable: "agy" } as AgentAdapter, codex: { provider: "codex", executable: "codex" } as AgentAdapter };
 
@@ -59,5 +60,41 @@ test("async workflow path completes developer, evidence and review", async () =>
     assert.ok(events.includes("run.started"));
     assert.ok(events.includes("run.phase"));
     assert.ok(events.includes("run.completed"));
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+
+test("async FULL final fix that touches an approved checkpoint re-reviews checkpoint before final", async () => {
+  const root = repo();
+  try {
+    let task = addCheckpoint(createTask("async-full-final-fix", "Async full final fix", "FULL", "cross component"), "C1");
+    task = setCheckpointScope(task, "C1", { include: ["src/a.ts"] });
+    task = transitionTask(task, "READY_FOR_DEV");
+    saveActiveTask(root, task);
+
+    let turns = 0;
+    let reviewSeq = 0;
+    const result = await runWorkflowAsync(root, {}, {
+      adapters,
+      develop: async (workspace) => {
+        turns += 1;
+        const current = loadActiveTask(workspace)!;
+        if (turns === 1 && current.activeCheckpointId === "C1") writeFileSync(join(workspace, "src", "a.ts"), "checkpoint-implemented\n");
+        else writeFileSync(join(workspace, "src", "a.ts"), "final-fix-touched-approved-checkpoint\n");
+        return { provider: "antigravity", success: true, sessionId: "dev-session", response: "done", rawStdout: "", rawStderr: "", exitCode: 0 };
+      },
+      review: async (...args: any[]) => {
+        reviewSeq += 1;
+        const response = reviewSeq === 2 ? revise : approved;
+        return orchestrateReview(args[0], args[1], args[2], args[3], args[4], `async-full-review-${reviewSeq}`, () => dispatch(response));
+      },
+    });
+
+    assert.equal(result.task.status, "COMPLETED");
+    assert.equal(turns, 2);
+    assert.equal(reviewSeq, 4);
+    assert.equal(result.reviews.length, 4);
+    assert.equal(result.task.checkpoints[0].verdict, "APPROVED");
+    assert.equal(result.task.finalReview.verdict, "APPROVED");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

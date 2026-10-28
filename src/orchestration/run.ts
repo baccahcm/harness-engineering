@@ -183,6 +183,12 @@ export function runWorkflow(root: string, options: WorkflowRunOptions = {}, deps
       }
 
       if (task.status === "READY_FOR_REVIEW") {
+        // Re-evaluate scoped approvals immediately before selecting a review target.
+        // A final-fix may legitimately touch files covered by an approved FULL checkpoint;
+        // that checkpoint must be re-reviewed before the final gate can run again.
+        const reviewStale = refreshStaleApprovals(root, task);
+        task = reviewStale.task;
+        if (reviewStale.invalidated.length) saveActiveTask(root, task);
         const reviewTarget = currentTarget(task);
         const reviewKey = targetKey(reviewTarget);
         const nextRound = (rounds.get(reviewKey) ?? 0) + 1;
@@ -327,6 +333,12 @@ export async function runWorkflowAsync(root: string, options: AsyncWorkflowRunOp
       }
 
       if (task.status === "READY_FOR_REVIEW") {
+        // Re-evaluate scoped approvals immediately before selecting a review target.
+        // A final-fix may legitimately touch files covered by an approved FULL checkpoint;
+        // that checkpoint must be re-reviewed before the final gate can run again.
+        const reviewStale = refreshStaleApprovals(root, task);
+        task = reviewStale.task;
+        if (reviewStale.invalidated.length) saveActiveTask(root, task);
         const reviewTarget = currentTarget(task);
         const reviewKey = targetKey(reviewTarget);
         const nextRound = (rounds.get(reviewKey) ?? 0) + 1;

@@ -158,7 +158,7 @@ test("FULL final REVISE runs developer fix and verification before final recheck
       develop: ((workspace: string) => {
         turns += 1;
         if (turns === 1) writeFileSync(join(workspace, "src", "a.ts"), "checkpoint-implemented\n");
-        else writeFileSync(join(workspace, "src", "b.ts"), "final-fix-implemented\n");
+        else writeFileSync(join(workspace, "src", "a.ts"), "final-fix-touched-approved-checkpoint\n");
         return { provider: "antigravity", success: true, sessionId: "dev-session", response: "implemented", rawStdout: "", rawStderr: "", exitCode: 0 };
       }) as any,
       review: ((...args: any[]) => {
@@ -170,8 +170,10 @@ test("FULL final REVISE runs developer fix and verification before final recheck
 
     assert.equal(result.task.status, "COMPLETED");
     assert.equal(turns, 2);
-    assert.equal(reviewSeq, 3);
+    assert.equal(reviewSeq, 4);
     assert.equal(result.evidence.length, 2);
+    assert.equal(result.reviews.length, 4);
+    assert.equal(result.task.checkpoints[0].verdict, "APPROVED");
     assert.equal(result.task.finalReview.verdict, "APPROVED");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

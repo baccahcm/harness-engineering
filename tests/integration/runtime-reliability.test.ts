@@ -1,8 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { spawn } from "node:child_process";
+import { pathToFileURL } from "node:url";
 import { initProject } from "../../src/installer/install.js";
 import { runStreamingCommand } from "../../src/runtime/process-runner.js";
 import { loadRuntimeRegistry, reconcileRuntimeProcesses, registerRuntimeProcess } from "../../src/runtime/process-registry.js";
@@ -12,6 +14,7 @@ import { transitionTask } from "../../src/core/state-machine.js";
 import { registerSession, loadSessionRegistry, markInFlight, markUncertain, resolveSessionState } from "../../src/agents/session-registry.js";
 import { CodexAdapter } from "../../src/agents/codex.js";
 import { adapterCapability } from "../../src/agents/capabilities.js";
+import { acquireRunLease, loadRunLease, releaseRunLease } from "../../src/runtime/run-lease.js";
 
 function root(): string {
   const value = mkdtempSync(join(tmpdir(), "harness-v05-"));
@@ -115,5 +118,79 @@ test("beginActiveTask refuses overwrite until predecessor is completed", async (
   try {
     saveActiveTask(r, createTask("active-one", "Active", "NONE", "docs"));
     assert.throws(() => beginActiveTask(r, createTask("active-two", "Other", "NONE", "docs")), (err: any) => err?.code === "ACTIVE_TASK_EXISTS");
+  } finally { rmSync(r, { recursive: true, force: true }); }
+});
+
+
+test("stale run-lease reclaim never deletes a lease while another reclaimer holds the guard", () => {
+  const r = root();
+  try {
+    const dir = join(r, ".harness", "state", "run-lease");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "lease.json"), `${JSON.stringify({ schemaVersion: 1, taskId: "stale-task", pid: 99999991, acquiredAt: "2026-10-28T00:00:00.000Z" }, null, 2)}\n`);
+    writeFileSync(join(dir, "reclaim.json"), `${JSON.stringify({ schemaVersion: 1, pid: 99999992, token: "other-reclaimer", acquiredAt: "2026-10-28T00:00:00.000Z" }, null, 2)}\n`);
+
+    assert.throws(() => acquireRunLease(r, "new-task"), (err: any) => err?.code === "RUN_LEASE_RACE");
+    assert.equal(loadRunLease(r)?.taskId, "stale-task");
+  } finally { rmSync(r, { recursive: true, force: true }); }
+});
+
+test("stale run-lease reclaim publishes one new owner and releases it safely", () => {
+  const r = root();
+  try {
+    const dir = join(r, ".harness", "state", "run-lease");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "lease.json"), `${JSON.stringify({ schemaVersion: 1, taskId: "stale-task", pid: 99999993, acquiredAt: "2026-10-28T00:00:00.000Z" }, null, 2)}\n`);
+
+    const lease = acquireRunLease(r, "replacement-task");
+    assert.equal(loadRunLease(r)?.taskId, "replacement-task");
+    assert.equal(loadRunLease(r)?.pid, process.pid);
+    releaseRunLease(r, lease);
+    assert.equal(loadRunLease(r), null);
+  } finally { rmSync(r, { recursive: true, force: true }); }
+});
+
+
+test("concurrent stale run-lease reclaimers cannot both acquire", async () => {
+  const r = root();
+  try {
+    const dir = join(r, ".harness", "state", "run-lease");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "lease.json"), `${JSON.stringify({ schemaVersion: 1, taskId: "stale-task", pid: 99999994, acquiredAt: "2026-10-28T00:00:00.000Z" }, null, 2)}\n`);
+    const start = join(r, "start-race");
+    const moduleUrl = pathToFileURL(join(process.cwd(), "dist", "src", "runtime", "run-lease.js")).href;
+    const script = `
+      import { existsSync } from "node:fs";
+      import { acquireRunLease, releaseRunLease } from ${JSON.stringify(moduleUrl)};
+      const root = ${JSON.stringify(r)};
+      const start = ${JSON.stringify(start)};
+      while (!existsSync(start)) await new Promise((resolve) => setTimeout(resolve, 5));
+      try {
+        const lease = acquireRunLease(root, "race-task");
+        console.log("ACQUIRED:" + process.pid);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        releaseRunLease(root, lease);
+      } catch (error) {
+        console.log("ERROR:" + (error?.code ?? "UNKNOWN"));
+      }
+    `;
+
+    const run = () => new Promise<string>((resolvePromise, rejectPromise) => {
+      const child = spawn(process.execPath, ["--input-type=module", "-e", script], { cwd: process.cwd() });
+      let stdout = "";
+      let stderr = "";
+      child.stdout?.setEncoding("utf8"); child.stdout?.on("data", (chunk: string) => { stdout += chunk; });
+      child.stderr?.setEncoding("utf8"); child.stderr?.on("data", (chunk: string) => { stderr += chunk; });
+      child.on("error", rejectPromise);
+      child.on("close", (code: number) => code === 0 ? resolvePromise(stdout.trim()) : rejectPromise(new Error(`contender exited ${code}: ${stderr}`)));
+    });
+
+    const first = run();
+    const second = run();
+    await new Promise<void>((resolvePromise) => setTimeout(resolvePromise, 75));
+    writeFileSync(start, "go\n");
+    const results = await Promise.all([first, second]);
+    assert.equal(results.filter((value) => value.startsWith("ACQUIRED:")).length, 1);
+    assert.equal(results.filter((value) => value.startsWith("ERROR:RUN_LEASE_")).length, 1);
   } finally { rmSync(r, { recursive: true, force: true }); }
 });
