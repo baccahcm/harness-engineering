@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/run-lease.schema.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "taskId",
+    "pid",
+    "acquiredAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "taskId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pid": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "acquiredAt": {
+      "type": "string"
+    }
+  }
+}

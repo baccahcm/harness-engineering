@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/review.schema.json",
+  "type": "object",
+  "required": ["schemaVersion", "verdict", "summary", "findings", "evidence", "notChecked"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "verdict": {"enum": ["APPROVED", "REVISE"]},
+    "summary": {"type": "string", "minLength": 1},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "description"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "severity": {"enum": ["low", "medium", "high", "critical"]},
+          "location": {"type": "string"},
+          "description": {"type": "string", "minLength": 1},
+          "requiredVerification": {"type": "string"}
+        }
+      }
+    },
+    "evidence": {"type": "array", "items": {"type": "string"}},
+    "notChecked": {"type": "array", "items": {"type": "string"}}
+  }
+}

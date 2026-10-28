@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/active-task-pointer.schema.json",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "planId", "taskId", "statePath"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "plan" },
+    "planId": { "type": "string", "minLength": 1 },
+    "taskId": { "type": "string", "minLength": 1 },
+    "statePath": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

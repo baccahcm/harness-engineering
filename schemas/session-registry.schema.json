@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/session-registry.schema.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "tasks"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "taskId",
+          "sessions"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "activeReviewer": {
+            "type": "string"
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "provider",
+                "purpose",
+                "model",
+                "sessionId",
+                "workspace",
+                "status",
+                "createdAt",
+                "updatedAt"
+              ],
+              "properties": {
+                "provider": {
+                  "enum": [
+                    "claude",
+                    "codex",
+                    "antigravity"
+                  ]
+                },
+                "purpose": {
+                  "enum": [
+                    "developer",
+                    "reviewer",
+                    "planner"
+                  ]
+                },
+                "model": {
+                  "type": "string"
+                },
+                "sessionId": {
+                  "type": "string"
+                },
+                "workspace": {
+                  "type": "string"
+                },
+                "status": {
+                  "enum": [
+                    "idle",
+                    "in_flight",
+                    "failed",
+                    "uncertain"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "type": "string"
+                },
+                "inFlight": {
+                  "type": "object",
+                  "required": [
+                    "requestId",
+                    "startedAt"
+                  ],
+                  "properties": {
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "startedAt": {
+                      "type": "string"
+                    },
+                    "pid": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                },
+                "lastFailureCode": {
+                  "type": "string"
+                },
+                "previousSessionIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "sessionId",
+                      "retiredAt"
+                    ],
+                    "properties": {
+                      "sessionId": {
+                        "type": "string"
+                      },
+                      "retiredAt": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "rotation": {
+                  "type": "object",
+                  "required": [
+                    "requestedAt",
+                    "summaryPath"
+                  ],
+                  "properties": {
+                    "requestedAt": {
+                      "type": "string"
+                    },
+                    "summaryPath": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "profileName": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "fallbackHistory": {
+            "type": "array"
+          }
+        }
+      }
+    }
+  }
+}

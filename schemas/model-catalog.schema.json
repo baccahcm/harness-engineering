@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/model-catalog.schema.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "provider",
+    "status",
+    "models",
+    "source",
+    "machineReadable",
+    "probedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "provider": {
+      "enum": [
+        "claude",
+        "codex",
+        "antigravity"
+      ]
+    },
+    "status": {
+      "enum": [
+        "available",
+        "unsupported",
+        "unavailable",
+        "error"
+      ]
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source": {
+      "enum": [
+        "provider-cli",
+        "none"
+      ]
+    },
+    "machineReadable": {
+      "type": "boolean"
+    },
+    "probedAt": {
+      "type": "string"
+    },
+    "detail": {
+      "type": "string"
+    }
+  }
+}

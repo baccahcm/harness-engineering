@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/workspace-registry.schema.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "workspaces"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "workspaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "root",
+          "enabled",
+          "addedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "root": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "addedAt": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

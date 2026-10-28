@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/run-state.schema.json",
+  "type": "object",
+  "required": ["schemaVersion","taskId","status","phase","round","updatedAt"],
+  "properties": {
+    "schemaVersion":{"const":1},
+    "taskId":{"type":"string"},
+    "status":{"enum":["running","failed","completed"]},
+    "phase":{"enum":["DEVELOP","VERIFY","REVIEW","FIX","FINAL_REVIEW","COMPLETED","FAILED"]},
+    "target":{"type":"string"},
+    "round":{"type":"integer","minimum":0},
+    "updatedAt":{"type":"string"},
+    "lastError":{"type":"object","properties":{"code":{"type":"string"},"message":{"type":"string"}}}
+  }
+}

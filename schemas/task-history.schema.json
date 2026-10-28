@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/task-history.schema.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "tasks"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "taskId",
+          "title",
+          "status",
+          "archivedAt",
+          "path"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "archivedAt": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "planId": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

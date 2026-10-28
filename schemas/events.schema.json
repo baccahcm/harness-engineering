@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/events.schema.json",
+  "type": "object",
+  "required": ["schemaVersion", "id", "at", "type", "data"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "id": {"type": "string"},
+    "at": {"type": "string"},
+    "type": {"type": "string"},
+    "taskId": {"type": "string"},
+    "data": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean", "null"]}}
+  }
+}

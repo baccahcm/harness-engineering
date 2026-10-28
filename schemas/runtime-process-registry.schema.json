@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/runtime-process-registry.schema.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "processes"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "processes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "pid",
+          "executable",
+          "cwd",
+          "status",
+          "startedAt",
+          "updatedAt",
+          "stdoutPath",
+          "stderrPath"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "pid": {
+            "type": "integer"
+          },
+          "executable": {
+            "type": "string"
+          },
+          "cwd": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "completed",
+              "failed",
+              "timed_out",
+              "cancelled",
+              "uncertain"
+            ]
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "completedAt": {
+            "type": "string"
+          },
+          "exitCode": {
+            "type": "integer"
+          },
+          "signal": {
+            "type": "string"
+          },
+          "cancelRequestedAt": {
+            "type": "string"
+          },
+          "stdoutPath": {
+            "type": "string"
+          },
+          "stderrPath": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "provider": {
+            "enum": [
+              "claude",
+              "codex",
+              "antigravity"
+            ]
+          },
+          "purpose": {
+            "enum": [
+              "developer",
+              "reviewer",
+              "planner"
+            ]
+          },
+          "model": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

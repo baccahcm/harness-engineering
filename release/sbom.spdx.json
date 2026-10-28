@@ -1,0 +1,32 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "engineering-harness-0.8.3",
+  "documentNamespace": "https://engineering-harness.local/spdx/engineering-harness/0.8.3/5ad7739d3be96c504b0b",
+  "creationInfo": {
+    "created": "2026-10-27T14:51:28.883Z",
+    "creators": [
+      "Tool: engineering-harness"
+    ]
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package",
+      "name": "engineering-harness",
+      "versionInfo": "0.8.3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "supplier": "NOASSERTION"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package"
+    }
+  ]
+}

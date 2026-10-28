@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/turn-metrics.schema.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "recordedAt",
+    "taskId",
+    "requestId",
+    "provider",
+    "purpose",
+    "model",
+    "success",
+    "responseChars"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "recordedAt": {
+      "type": "string"
+    },
+    "taskId": {
+      "type": "string"
+    },
+    "requestId": {
+      "type": "string"
+    },
+    "provider": {
+      "enum": [
+        "claude",
+        "codex",
+        "antigravity"
+      ]
+    },
+    "purpose": {
+      "enum": [
+        "developer",
+        "reviewer",
+        "planner"
+      ]
+    },
+    "model": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "success": {
+      "type": "boolean"
+    },
+    "responseChars": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "usage": {
+      "type": "object",
+      "properties": {
+        "inputTokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "outputTokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cachedInputTokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalTokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source": {
+          "const": "provider"
+        }
+      }
+    },
+    "reviewerName": {
+      "type": "string"
+    }
+  }
+}

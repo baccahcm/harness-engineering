@@ -1,0 +1,303 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering-harness.local/schemas/config.schema.json",
+  "type": "object",
+  "required": [
+    "harness",
+    "project",
+    "workflow",
+    "git",
+    "permissions",
+    "evidence",
+    "installation"
+  ],
+  "properties": {
+    "harness": {
+      "type": "object",
+      "required": [
+        "version",
+        "schemaVersion"
+      ],
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "schemaVersion": {
+          "const": 1
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "root",
+        "initializedAt"
+      ],
+      "properties": {
+        "root": {
+          "type": "string"
+        },
+        "initializedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "required": [
+        "defaultReviewLevel"
+      ],
+      "properties": {
+        "defaultReviewLevel": {
+          "enum": [
+            "NONE",
+            "LIGHT",
+            "FULL"
+          ]
+        }
+      }
+    },
+    "git": {
+      "type": "object"
+    },
+    "permissions": {
+      "type": "object"
+    },
+    "evidence": {
+      "type": "object"
+    },
+    "installation": {
+      "type": "object"
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "agents": {
+      "type": "object",
+      "properties": {
+        "developer": {
+          "$ref": "#/$defs/agentProfile"
+        },
+        "reviewers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reviewerProfile"
+          }
+        },
+        "planner": {
+          "$ref": "#/$defs/agentProfile"
+        }
+      }
+    },
+    "orchestration": {
+      "type": "object",
+      "properties": {
+        "maxReviewRounds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "verificationKeys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "properties": {
+        "agentTimeoutMs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "terminateGraceMs": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "compactionThresholdEstimatedTokens": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "events": {
+      "type": "object",
+      "properties": {
+        "retainEntries": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "catalog": {
+      "type": "object",
+      "properties": {
+        "cacheTtlMs": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "operator": {
+      "type": "object",
+      "properties": {
+        "refreshIntervalMs": {
+          "type": "integer",
+          "minimum": 100
+        },
+        "eventLimit": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "scheduler": {
+      "type": "object",
+      "properties": {
+        "maxParallel": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "ci": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "enum": [
+            "github",
+            "gitlab",
+            "both"
+          ]
+        }
+      }
+    },
+    "reviewPolicy": {
+      "type": "object",
+      "required": [
+        "strategy",
+        "levels",
+        "execution"
+      ],
+      "properties": {
+        "strategy": {
+          "const": "ordered_threshold"
+        },
+        "levels": {
+          "type": "object",
+          "required": [
+            "NONE",
+            "LIGHT",
+            "FULL"
+          ],
+          "properties": {
+            "NONE": {
+              "$ref": "#/$defs/reviewLevelApprovalPolicy"
+            },
+            "LIGHT": {
+              "$ref": "#/$defs/reviewLevelApprovalPolicy"
+            },
+            "FULL": {
+              "$ref": "#/$defs/reviewLevelApprovalPolicy"
+            }
+          }
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "lazyDispatch",
+            "parallel",
+            "stopOnRevise",
+            "reuseSessions"
+          ],
+          "properties": {
+            "lazyDispatch": {
+              "const": true
+            },
+            "parallel": {
+              "const": false
+            },
+            "stopOnRevise": {
+              "const": true
+            },
+            "reuseSessions": {
+              "const": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "agentProfile": {
+      "type": "object",
+      "required": [
+        "provider",
+        "model"
+      ],
+      "properties": {
+        "provider": {
+          "enum": [
+            "claude",
+            "codex",
+            "antigravity"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "reviewerProfile": {
+      "type": "object",
+      "required": [
+        "name",
+        "provider",
+        "model"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provider": {
+          "enum": [
+            "claude",
+            "codex",
+            "antigravity"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "reviewLevelApprovalPolicy": {
+      "type": "object",
+      "required": [
+        "approvalsRequired"
+      ],
+      "properties": {
+        "approvalsRequired": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxReviewers": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
