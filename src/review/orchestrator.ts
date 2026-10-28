@@ -3,7 +3,7 @@ import { HarnessError, PolicyViolation } from "../core/errors.js";
 import { effectiveReviewPolicy, loadConfig } from "../core/config.js";
 import { loadActiveTask, saveActiveTask } from "../core/store.js";
 import { applyReviewVerdict, transitionTask } from "../core/state-machine.js";
-import type { ReviewerApproval, TaskState } from "../core/types.js";
+import type { ReviewerApproval, ReviewerRecheckRequirement, TaskState } from "../core/types.js";
 import { inspectGit } from "../git/git.js";
 import { dispatchReview, type ReviewDispatchResult } from "./dispatcher.js";
 import { reviewerId, type ReviewerCandidate } from "./router.js";
@@ -55,6 +55,56 @@ function setTargetApprovals(task: TaskState, target: ReviewTarget, approvals: Re
   };
 }
 
+function targetRecheck(task: TaskState, target: ReviewTarget): ReviewerRecheckRequirement | undefined {
+  if (target.kind === "final") return task.finalReview.requiredRecheck;
+  return task.checkpoints.find((c) => c.id === target.checkpointId)?.requiredRecheck;
+}
+
+function setTargetRecheck(task: TaskState, target: ReviewTarget, requiredRecheck?: ReviewerRecheckRequirement): TaskState {
+  if (target.kind === "final") return { ...task, finalReview: { ...task.finalReview, ...(requiredRecheck ? { requiredRecheck } : { requiredRecheck: undefined }) } };
+  return {
+    ...task,
+    checkpoints: task.checkpoints.map((checkpoint) => checkpoint.id === target.checkpointId
+      ? { ...checkpoint, ...(requiredRecheck ? { requiredRecheck } : { requiredRecheck: undefined }) }
+      : checkpoint),
+  };
+}
+
+function setRequiredRecheck(task: TaskState, target: ReviewTarget, dispatchResult: ReviewDispatchResult, parsed: StructuredReviewResult, now = new Date().toISOString()): TaskState {
+  const sessionId = dispatchResult.result.sessionId;
+  if (!sessionId) throw new HarnessError("SESSION_ID_MISSING", "Reviewer completed without a resumable session ID.");
+  const requiredRecheck: ReviewerRecheckRequirement = {
+    reviewerId: reviewerId(dispatchResult.reviewer),
+    provider: dispatchResult.reviewer.provider,
+    model: dispatchResult.reviewer.model,
+    sessionId,
+    findingIds: parsed.findings.map((finding) => finding.id),
+    requestedAt: now,
+  };
+  const approvals = targetApprovals(task, target).filter((approval) => approval.reviewerId !== requiredRecheck.reviewerId);
+  return setTargetRecheck(setTargetApprovals(task, target, approvals), target, requiredRecheck);
+}
+
+function clearRequiredRecheck(task: TaskState, target: ReviewTarget): TaskState {
+  return setTargetRecheck(task, target, undefined);
+}
+
+function canonicalizeDispatchReviewer(dispatchResult: ReviewDispatchResult, candidates: ReviewerCandidate[]): ReviewDispatchResult {
+  const exact = candidates.find((candidate) => reviewerId(candidate) === reviewerId(dispatchResult.reviewer));
+  if (exact) return { ...dispatchResult, reviewer: exact };
+  const sameProviderModel = candidates.filter((candidate) => candidate.provider === dispatchResult.reviewer.provider && candidate.model === dispatchResult.reviewer.model);
+  if (sameProviderModel.length === 1) return { ...dispatchResult, reviewer: sameProviderModel[0] };
+  return dispatchResult;
+}
+
+function requiredRecheckCandidate(task: TaskState, target: ReviewTarget, candidates: ReviewerCandidate[]): ReviewerCandidate | undefined {
+  const required = targetRecheck(task, target);
+  if (!required) return undefined;
+  const candidate = candidates.find((item) => reviewerId(item) === required.reviewerId && item.provider === required.provider && item.model === required.model);
+  if (!candidate) throw new HarnessError("RECHECK_REVIEWER_REQUIRED", `Reviewer ${required.reviewerId} must recheck findings ${required.findingIds.join(", ")} before this gate can complete.`);
+  return candidate;
+}
+
 function addApproval(task: TaskState, target: ReviewTarget, candidate: ReviewerCandidate, sessionId: string, sourceFingerprint: string, now = new Date().toISOString()): TaskState {
   const id = reviewerId(candidate);
   const approvals = targetApprovals(task, target).filter((approval) => approval.reviewerId !== id);
@@ -76,8 +126,9 @@ function finishApprovedTarget(task: TaskState, target: ReviewTarget, sourceFinge
   return { task, nextAction: "COMPLETED" };
 }
 
-function finishRevisedTarget(task: TaskState, target: ReviewTarget): TaskState {
+function finishRevisedTarget(task: TaskState, target: ReviewTarget, dispatchResult: ReviewDispatchResult, parsed: StructuredReviewResult): TaskState {
   task = applyReviewVerdict(task, "reviewer", "REVISE", target.kind === "checkpoint" ? target.checkpointId : undefined);
+  task = setRequiredRecheck(task, target, dispatchResult, parsed);
   return transitionTask(task, "IN_PROGRESS");
 }
 
@@ -106,6 +157,7 @@ function recoveredApprovedResult(root: string, task: TaskState, target: ReviewTa
   if (!review) throw new HarnessError("APPROVAL_STATE_INCONSISTENT", "Task contains valid reviewer approvals but no matching recorded review artifact.");
   const candidate: ReviewerCandidate = { ...(review.reviewer.name ? { name: review.reviewer.name } : {}), provider: review.reviewer.provider, model: review.reviewer.model };
   const dispatch: ReviewDispatchResult = { reviewer: candidate, result: { provider: review.reviewer.provider, success: true, sessionId: review.reviewer.sessionId, response: review.rawResponse, rawStdout: "", rawStderr: "", exitCode: 0 }, attempts: [] };
+  if (targetRecheck(task, target)) throw new HarnessError("RECHECK_REQUIRED", "A reviewer that requested changes must approve the fix before this gate can complete.");
   const completed = finishApprovedTarget(task, target, sourceFingerprint);
   saveActiveTask(root, completed.task);
   return { dispatch, review, dispatches: [], reviews: [], approvalProgress: { approvalsRequired: policy.approvalsRequired, maxReviewers: policy.maxReviewers, approvals: approvals.map((approval) => approval.reviewerId), completedReviews: approvals.length }, taskStatus: completed.task.status, nextAction: completed.nextAction };
@@ -177,7 +229,8 @@ export function orchestrateReview(
   let { task, source, policy } = prepare(root, target, candidates);
   let approvals = targetApprovals(task, target).filter((approval) => approval.sourceFingerprint === source.fingerprint);
   task = setTargetApprovals(task, target, approvals); saveActiveTask(root, task);
-  if (approvals.length >= policy.approvalsRequired) return recoveredApprovedResult(root, task, target, approvals, policy, source.fingerprint);
+  const requiredRecheck = requiredRecheckCandidate(task, target, candidates);
+  if (!requiredRecheck && approvals.length >= policy.approvalsRequired) return recoveredApprovedResult(root, task, target, approvals, policy, source.fingerprint);
 
   const dispatches: ReviewDispatchResult[] = [];
   const reviews: RecordedReview[] = [];
@@ -186,13 +239,18 @@ export function orchestrateReview(
   let lastDispatch: ReviewDispatchResult | undefined;
   let lastReview: RecordedReview | undefined;
 
-  while (approvals.length < policy.approvalsRequired && completedReviews < policy.maxReviewers) {
-    while (cursor < candidates.length && approvals.some((approval) => approval.reviewerId === reviewerId(candidates[cursor]))) cursor += 1;
-    if (cursor >= candidates.length) break;
-    const remaining = candidates.slice(cursor).filter((candidate) => !approvals.some((approval) => approval.reviewerId === reviewerId(candidate)));
+  while ((approvals.length < policy.approvalsRequired || targetRecheck(task, target)) && completedReviews < policy.maxReviewers) {
+    const recheckCandidate = requiredRecheckCandidate(task, target, candidates);
+    const wasRecheck = Boolean(recheckCandidate);
+    while (!recheckCandidate && cursor < candidates.length && approvals.some((approval) => approval.reviewerId === reviewerId(candidates[cursor]))) cursor += 1;
+    if (!recheckCandidate && cursor >= candidates.length) break;
+    const remaining = recheckCandidate
+      ? [recheckCandidate]
+      : candidates.slice(cursor).filter((candidate) => !approvals.some((approval) => approval.reviewerId === reviewerId(candidate)));
     if (!remaining.length) break;
     const fullSourceBefore = inspectGit(root);
-    const dispatchResult = dispatch(root, promptFor(root, task, target, source, extraRequest, approvals), remaining, adapters, `${requestId}-${dispatches.length + 1}`);
+    const rawDispatchResult = dispatch(root, promptFor(root, task, target, source, extraRequest, approvals), remaining, adapters, `${requestId}-${dispatches.length + 1}`);
+    const dispatchResult = canonicalizeDispatchReviewer(rawDispatchResult, candidates);
     lastDispatch = dispatchResult; dispatches.push(dispatchResult);
     if (!dispatchResult.result.success) throw new HarnessError(dispatchResult.result.failureCode ?? "REVIEW_EXECUTION_FAILED", "Independent reviewer did not complete successfully.");
     const fullSourceAfter = inspectGit(root);
@@ -202,20 +260,23 @@ export function orchestrateReview(
     lastReview = review; reviews.push(review); completedReviews += 1;
     const usedId = reviewerId(dispatchResult.reviewer);
     const usedIndex = candidates.findIndex((candidate, index) => index >= cursor && reviewerId(candidate) === usedId);
-    cursor = usedIndex >= 0 ? usedIndex + 1 : cursor + 1;
+    cursor = wasRecheck ? 0 : (usedIndex >= 0 ? usedIndex + 1 : cursor + 1);
 
     if (parsed.verdict === "REVISE") {
-      task = finishRevisedTarget(task, target); saveActiveTask(root, task);
+      task = finishRevisedTarget(task, target, dispatchResult, parsed); saveActiveTask(root, task);
       return { dispatch: dispatchResult, review, dispatches, reviews, approvalProgress: { approvalsRequired: policy.approvalsRequired, maxReviewers: policy.maxReviewers, approvals: approvals.map((a) => a.reviewerId), completedReviews }, taskStatus: task.status, nextAction: "FIX" };
     }
 
     const sessionId = dispatchResult.result.sessionId!;
     task = addApproval(task, target, dispatchResult.reviewer, sessionId, source.fingerprint);
+    const required = targetRecheck(task, target);
+    if (required && required.reviewerId === reviewerId(dispatchResult.reviewer)) task = clearRequiredRecheck(task, target);
     approvals = targetApprovals(task, target);
     saveActiveTask(root, task);
   }
 
   if (!lastDispatch || !lastReview) throw new HarnessError("APPROVAL_THRESHOLD_UNMET", `Approval threshold ${approvals.length}/${policy.approvalsRequired} could not be satisfied by configured reviewers.`);
+  if (targetRecheck(task, target)) throw new HarnessError("RECHECK_REQUIRED", "A reviewer that requested changes must approve the fix before this gate can complete.");
   if (approvals.length < policy.approvalsRequired) throw new HarnessError("APPROVAL_THRESHOLD_UNMET", `Approval threshold ${approvals.length}/${policy.approvalsRequired} was not reached before maxReviewers=${policy.maxReviewers}.`);
 
   const completed = finishApprovedTarget(task, target, source.fingerprint); task = completed.task; saveActiveTask(root, task);
@@ -240,7 +301,8 @@ export async function orchestrateReviewAsync(
   let { task, source, policy } = prepare(root, target, candidates);
   let approvals = targetApprovals(task, target).filter((approval) => approval.sourceFingerprint === source.fingerprint);
   task = setTargetApprovals(task, target, approvals); saveActiveTask(root, task);
-  if (approvals.length >= policy.approvalsRequired) return recoveredApprovedResult(root, task, target, approvals, policy, source.fingerprint);
+  const requiredRecheck = requiredRecheckCandidate(task, target, candidates);
+  if (!requiredRecheck && approvals.length >= policy.approvalsRequired) return recoveredApprovedResult(root, task, target, approvals, policy, source.fingerprint);
 
   const dispatches: ReviewDispatchResult[] = [];
   const reviews: RecordedReview[] = [];
@@ -249,13 +311,18 @@ export async function orchestrateReviewAsync(
   let lastDispatch: ReviewDispatchResult | undefined;
   let lastReview: RecordedReview | undefined;
 
-  while (approvals.length < policy.approvalsRequired && completedReviews < policy.maxReviewers) {
-    while (cursor < candidates.length && approvals.some((approval) => approval.reviewerId === reviewerId(candidates[cursor]))) cursor += 1;
-    if (cursor >= candidates.length) break;
-    const remaining = candidates.slice(cursor).filter((candidate) => !approvals.some((approval) => approval.reviewerId === reviewerId(candidate)));
+  while ((approvals.length < policy.approvalsRequired || targetRecheck(task, target)) && completedReviews < policy.maxReviewers) {
+    const recheckCandidate = requiredRecheckCandidate(task, target, candidates);
+    const wasRecheck = Boolean(recheckCandidate);
+    while (!recheckCandidate && cursor < candidates.length && approvals.some((approval) => approval.reviewerId === reviewerId(candidates[cursor]))) cursor += 1;
+    if (!recheckCandidate && cursor >= candidates.length) break;
+    const remaining = recheckCandidate
+      ? [recheckCandidate]
+      : candidates.slice(cursor).filter((candidate) => !approvals.some((approval) => approval.reviewerId === reviewerId(candidate)));
     if (!remaining.length) break;
     const fullSourceBefore = inspectGit(root);
-    const dispatchResult = await dispatchReviewAsync(root, promptFor(root, task, target, source, extraRequest, approvals), remaining, adapters, `${requestId}-${dispatches.length + 1}`, options);
+    const rawDispatchResult = await dispatchReviewAsync(root, promptFor(root, task, target, source, extraRequest, approvals), remaining, adapters, `${requestId}-${dispatches.length + 1}`, options);
+    const dispatchResult = canonicalizeDispatchReviewer(rawDispatchResult, candidates);
     lastDispatch = dispatchResult; dispatches.push(dispatchResult);
     if (!dispatchResult.result.success) throw new HarnessError(dispatchResult.result.failureCode ?? "REVIEW_EXECUTION_FAILED", "Independent reviewer did not complete successfully.");
     const fullSourceAfter = inspectGit(root);
@@ -265,17 +332,20 @@ export async function orchestrateReviewAsync(
     lastReview = review; reviews.push(review); completedReviews += 1;
     const usedId = reviewerId(dispatchResult.reviewer);
     const usedIndex = candidates.findIndex((candidate, index) => index >= cursor && reviewerId(candidate) === usedId);
-    cursor = usedIndex >= 0 ? usedIndex + 1 : cursor + 1;
+    cursor = wasRecheck ? 0 : (usedIndex >= 0 ? usedIndex + 1 : cursor + 1);
 
     if (parsed.verdict === "REVISE") {
-      task = finishRevisedTarget(task, target); saveActiveTask(root, task);
+      task = finishRevisedTarget(task, target, dispatchResult, parsed); saveActiveTask(root, task);
       return { dispatch: dispatchResult, review, dispatches, reviews, approvalProgress: { approvalsRequired: policy.approvalsRequired, maxReviewers: policy.maxReviewers, approvals: approvals.map((a) => a.reviewerId), completedReviews }, taskStatus: task.status, nextAction: "FIX" };
     }
 
     task = addApproval(task, target, dispatchResult.reviewer, dispatchResult.result.sessionId!, source.fingerprint);
+    const required = targetRecheck(task, target);
+    if (required && required.reviewerId === reviewerId(dispatchResult.reviewer)) task = clearRequiredRecheck(task, target);
     approvals = targetApprovals(task, target); saveActiveTask(root, task);
   }
 
+  if (targetRecheck(task, target)) throw new HarnessError("RECHECK_REQUIRED", "A reviewer that requested changes must approve the fix before this gate can complete.");
   if (!lastDispatch || !lastReview || approvals.length < policy.approvalsRequired) throw new HarnessError("APPROVAL_THRESHOLD_UNMET", `Approval threshold ${approvals.length}/${policy.approvalsRequired} was not reached before maxReviewers=${policy.maxReviewers}.`);
   const completed = finishApprovedTarget(task, target, source.fingerprint); task = completed.task; saveActiveTask(root, task);
   return { dispatch: lastDispatch, review: lastReview, dispatches, reviews, approvalProgress: { approvalsRequired: policy.approvalsRequired, maxReviewers: policy.maxReviewers, approvals: approvals.map((a) => a.reviewerId), completedReviews }, taskStatus: task.status, nextAction: completed.nextAction };

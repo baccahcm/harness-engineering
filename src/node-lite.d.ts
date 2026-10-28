@@ -19,6 +19,7 @@ declare function clearInterval(handle: any): void;
 declare module "node:fs" {
   export function existsSync(path: string): boolean;
   export function readFileSync(path: string, encoding: string): string;
+  export function linkSync(existingPath: string, newPath: string): void;
   export function writeFileSync(path: string, data: string): void;
   export function appendFileSync(path: string, data: string): void;
   export function copyFileSync(src: string, dst: string): void;

@@ -146,7 +146,7 @@ export function runWorkflow(root: string, options: WorkflowRunOptions = {}, deps
         }
 
         // When every FULL checkpoint is approved, no new implementation turn is needed before the final whole-change review.
-        if (task.review.level === "FULL" && target.kind === "final" && task.checkpoints.length > 0) {
+        if (task.review.level === "FULL" && target.kind === "final" && task.checkpoints.length > 0 && task.finalReview.verdict !== "REVISE") {
           task = transitionTask(task, "READY_FOR_REVIEW");
           saveActiveTask(root, task);
           continue;
@@ -296,7 +296,7 @@ export async function runWorkflowAsync(root: string, options: AsyncWorkflowRunOp
           if (!checkpoint.scope) throw new HarnessError("CHECKPOINT_SCOPE_MISSING", `Automated FULL workflow requires ownership scope for checkpoint ${checkpoint.id}.`);
           task = activateCheckpoint(task, checkpoint.id); saveActiveTask(root, task);
         }
-        if (task.review.level === "FULL" && target.kind === "final" && task.checkpoints.length > 0) {
+        if (task.review.level === "FULL" && target.kind === "final" && task.checkpoints.length > 0 && task.finalReview.verdict !== "REVISE") {
           task = transitionTask(task, "READY_FOR_REVIEW"); saveActiveTask(root, task); continue;
         }
         updateRun(rounds.get(key) ? "FIX" : "DEVELOP", target);

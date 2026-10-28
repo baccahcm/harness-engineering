@@ -142,3 +142,36 @@ test("automated FULL run refuses an unscoped pending checkpoint", () => {
     }), (err: any) => err?.code === "CHECKPOINT_SCOPE_MISSING");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test("FULL final REVISE runs developer fix and verification before final recheck", () => {
+  const root = repo();
+  try {
+    let task = addCheckpoint(createTask("full-final-fix", "Full final fix", "FULL", "cross component"), "C1");
+    task = setCheckpointScope(task, "C1", { include: ["src/a.ts"] });
+    task = transitionTask(task, "READY_FOR_DEV");
+    saveActiveTask(root, task);
+
+    let turns = 0;
+    let reviewSeq = 0;
+    const result = runWorkflow(root, {}, {
+      adapters,
+      develop: ((workspace: string) => {
+        turns += 1;
+        if (turns === 1) writeFileSync(join(workspace, "src", "a.ts"), "checkpoint-implemented\n");
+        else writeFileSync(join(workspace, "src", "b.ts"), "final-fix-implemented\n");
+        return { provider: "antigravity", success: true, sessionId: "dev-session", response: "implemented", rawStdout: "", rawStderr: "", exitCode: 0 };
+      }) as any,
+      review: ((...args: any[]) => {
+        reviewSeq += 1;
+        const response = reviewSeq === 2 ? revise : approved;
+        return orchestrateReview(args[0], args[1], args[2], args[3], args[4], `full-final-review-${reviewSeq}`, () => dispatch(response));
+      }) as any,
+    });
+
+    assert.equal(result.task.status, "COMPLETED");
+    assert.equal(turns, 2);
+    assert.equal(reviewSeq, 3);
+    assert.equal(result.evidence.length, 2);
+    assert.equal(result.task.finalReview.verdict, "APPROVED");
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

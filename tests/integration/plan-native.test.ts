@@ -94,3 +94,27 @@ test("plan run refuses an imported plan until explicit approval", async () => {
     assert.equal(code, "PLAN_NOT_APPROVED");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test("plan recovery completes when the recovered active task was the final plan task", async () => {
+  const root = project();
+  try {
+    const single = JSON.stringify({
+      title: "Single task plan",
+      summary: "One task only.",
+      tasks: [
+        { id: "only", title: "Only", objective: "Complete it", reviewLevel: "LIGHT", reviewReason: "isolated", acceptance: [{ id: "A1", description: "Done" }], checkpoints: [], dependsOn: [], verificationKeys: ["unit"] },
+      ],
+    });
+    const manifest = await importPlan(root, "PLAN.md", { planner: { provider: "codex", model: "planner-model" }, responseOverride: single });
+    const approved = approvePlan(root);
+    let task = materializePlanTask(root, approved, approved.tasks[0]);
+    task = { ...task, status: "COMPLETED" as const };
+    saveActiveTask(root, task);
+
+    let called = false;
+    const result = await runPlan(root, {}, (async () => { called = true; throw new Error("should not rerun completed task"); }) as any);
+    assert.equal(called, false);
+    assert.equal(result.manifest.status, "COMPLETED");
+    assert.equal(result.manifest.tasks[0].status, "COMPLETED");
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

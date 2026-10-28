@@ -36,12 +36,22 @@ export interface ReviewerApproval {
   approvedAt: string;
 }
 
+export interface ReviewerRecheckRequirement {
+  reviewerId: string;
+  provider: HarnessAgentProvider;
+  model: string;
+  sessionId: string;
+  findingIds: string[];
+  requestedAt: string;
+}
+
 export interface CheckpointState {
   id: string;
   verdict: ReviewVerdict;
   scope?: CheckpointScope;
   sourceFingerprint?: string;
   approvals?: ReviewerApproval[];
+  requiredRecheck?: ReviewerRecheckRequirement;
 }
 
 export interface TaskReviewPolicyOverride {
@@ -70,6 +80,7 @@ export interface TaskState {
     verdict: ReviewVerdict;
     sourceFingerprint?: string;
     approvals?: ReviewerApproval[];
+    requiredRecheck?: ReviewerRecheckRequirement;
   };
   verificationKeys?: string[];
   plan?: {

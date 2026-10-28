@@ -168,6 +168,49 @@
                 }
               }
             }
+          },
+          "requiredRecheck": {
+            "type": "object",
+            "required": [
+              "reviewerId",
+              "provider",
+              "model",
+              "sessionId",
+              "findingIds",
+              "requestedAt"
+            ],
+            "properties": {
+              "reviewerId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "provider": {
+                "enum": [
+                  "claude",
+                  "codex",
+                  "antigravity"
+                ]
+              },
+              "model": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sessionId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "findingIds": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "requestedAt": {
+                "type": "string"
+              }
+            }
           }
         }
       }
@@ -227,6 +270,49 @@
               "approvedAt": {
                 "type": "string"
               }
+            }
+          }
+        },
+        "requiredRecheck": {
+          "type": "object",
+          "required": [
+            "reviewerId",
+            "provider",
+            "model",
+            "sessionId",
+            "findingIds",
+            "requestedAt"
+          ],
+          "properties": {
+            "reviewerId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "provider": {
+              "enum": [
+                "claude",
+                "codex",
+                "antigravity"
+              ]
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sessionId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "findingIds": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "requestedAt": {
+              "type": "string"
             }
           }
         }

@@ -68,6 +68,7 @@ export async function runPlan(root: string, options: WorkflowRunOptions = {}, ru
         const spec = manifest.tasks.find((task) => task.id === active!.plan!.taskSpecId);
         if (spec) spec.status = "COMPLETED";
         archiveActiveTask(root); active = null; manifest.currentTaskId = undefined; savePlanManifest(root, manifest);
+        if (manifest.tasks.every((task) => task.status === "COMPLETED")) continue;
       } else if (active && active.plan?.manifestId !== manifest.id) {
         throw new HarnessError("ACTIVE_TASK_CONFLICT", `Active task ${active.id} does not belong to active plan ${manifest.id}.`);
       }

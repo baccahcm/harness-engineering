@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { initProject } from "../../src/installer/install.js";
@@ -150,5 +150,17 @@ test("context status recommends explicit compaction at configured estimate", () 
     recordTurnMetric(r, { taskId: task.id, requestId: "r", provider: "antigravity", purpose: "developer", model: "m", sessionId: "s", success: true, prompt: { taskId: task.id, purpose: "developer", provider: "antigravity", model: "m", mode: "INITIAL", target: "final", reusedSession: false, stablePrefixHash: "a", promptHash: "b", estimatedInputTokens: 101, sections: ["stable-prefix"] }, responseChars: 1 });
     const status = contextStatus(r, 100);
     assert.equal(status[0].compactionRecommended, true);
+  } finally { rmSync(r, { recursive: true, force: true }); }
+});
+
+test("run lease never deletes an existing malformed canonical lock", () => {
+  const r = root();
+  try {
+    const dir = join(r, ".harness", "state", "run-lease");
+    mkdirSync(dir, { recursive: true });
+    const path = join(dir, "lease.json");
+    writeFileSync(path, "{partial");
+    assert.throws(() => acquireRunLease(r, "contender"), (err: any) => err?.code === "RUN_LEASE_RACE");
+    assert.equal(existsSync(path), true);
   } finally { rmSync(r, { recursive: true, force: true }); }
 });

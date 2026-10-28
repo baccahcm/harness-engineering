@@ -97,7 +97,7 @@ test("REVISE stops immediately and later source change invalidates prior reviewe
 
     const secondCalls: string[] = [];
     const second = orchestrateReview(root, { kind: "final" }, configuredCandidates(root), {}, "", "r-recheck", sequentialDispatch({}, secondCalls));
-    assert.deepEqual(secondCalls, ["claude", "codex"]);
+    assert.deepEqual(secondCalls, ["codex", "claude"]);
     assert.equal(second.nextAction, "COMPLETED");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
@@ -205,5 +205,38 @@ test("canonical review gate rejects a candidate order that bypasses project revi
       () => orchestrateReview(root, { kind: "final" }, wrong, {}, "", "order-bypass", sequentialDispatch({}, [])),
       (error: any) => error?.code === "REVIEWER_POLICY_MISMATCH",
     );
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("reviewer that returned REVISE must recheck before another reviewer can complete the gate", () => {
+  const root = repo();
+  try {
+    setReviewLevelPolicy(root, "LIGHT", { approvalsRequired: 1, maxReviewers: 2 });
+    ready(root, "recheck-owner");
+
+    const firstDispatch = (_root: string, _prompt: ReviewPromptInput, candidates: ReviewerCandidate[]): ReviewDispatchResult => {
+      const a = candidates[0];
+      const b = candidates[1];
+      return {
+        reviewer: b,
+        attempts: [{ reviewer: a, failureCode: "QUOTA_EXHAUSTED" }, { reviewer: b }],
+        result: { provider: b.provider, success: true, sessionId: "codex-revise-session", response: revise, rawStdout: revise, rawStderr: "", exitCode: 0 },
+      };
+    };
+
+    const first = orchestrateReview(root, { kind: "final" }, configuredCandidates(root), {}, "", "recheck-owner-1", firstDispatch);
+    assert.equal(first.nextAction, "FIX");
+    assert.equal(loadActiveTask(root)?.finalReview.requiredRecheck?.reviewerId, "codex");
+    assert.deepEqual(loadActiveTask(root)?.finalReview.requiredRecheck?.findingIds, ["F1"]);
+
+    let task = loadActiveTask(root)!;
+    task = transitionTask(task, "READY_FOR_REVIEW");
+    saveActiveTask(root, task);
+
+    const secondCalls: string[] = [];
+    const second = orchestrateReview(root, { kind: "final" }, configuredCandidates(root), {}, "", "recheck-owner-2", sequentialDispatch({}, secondCalls));
+    assert.deepEqual(secondCalls, ["codex"]);
+    assert.equal(second.nextAction, "COMPLETED");
+    assert.equal(loadActiveTask(root)?.finalReview.requiredRecheck, undefined);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
