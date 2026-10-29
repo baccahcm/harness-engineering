@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 
 export type ProcessEnvMap = Record<string, string | undefined>;
@@ -69,23 +69,55 @@ export function resolveWindowsExecutable(
     const found = findInDirectory(entry, executable);
     if (found) return found;
   }
+  const lower = executable.toLowerCase();
+  if (lower === "codex" || lower === "codex.exe") {
+    const localAppData = env.LOCALAPPDATA ?? env.LocalAppData ?? process.env.LOCALAPPDATA ?? process.env.LocalAppData;
+    if (localAppData) {
+      const codexBinRoot = join(localAppData, "OpenAI", "Codex", "bin");
+      if (existsSync(codexBinRoot)) {
+        const direct = findInDirectory(codexBinRoot, "codex.exe");
+        if (direct) return direct;
+        try {
+          for (const sub of readdirSync(codexBinRoot).sort().reverse()) {
+            const candidate = findInDirectory(join(codexBinRoot, sub), "codex.exe");
+            if (candidate) return candidate;
+          }
+        } catch {}
+      }
+    }
+  }
   return executable;
 }
 
-function tryUnwrapNodeCmdShim(cmdPath: string): { nodeExecutable: string; scriptPath: string } | null {
+function tryUnwrapCmdShim(cmdPath: string, args: string[]): ResolvedCommandSpec | null {
   if (!isFile(cmdPath)) return null;
   try {
-    const content = readFileSync(cmdPath, "utf8");
-    const match = /^@ECHO off[\s\S]*?"%_prog%"\s+"%dp0%[\\/]([^"\r\n]+)"\s+%\*\s*$/i.exec(content.trim());
-    if (!match) return null;
+    const content = readFileSync(cmdPath, "utf8").trim();
     const baseDir = dirname(cmdPath);
-    const scriptPath = resolve(baseDir, match[1]);
-    if (!isFile(scriptPath)) return null;
-    const localNode = join(baseDir, "node.exe");
-    return {
-      nodeExecutable: isFile(localNode) ? localNode : process.execPath,
-      scriptPath,
-    };
+    const nodeMatch = /^@ECHO off[\s\S]*?"%_prog%"\s+"%dp0%[\\/]([^"\r\n]+)"\s+%\*\s*$/i.exec(content);
+    if (nodeMatch) {
+      const scriptPath = resolve(baseDir, nodeMatch[1]);
+      if (isFile(scriptPath)) {
+        const localNode = join(baseDir, "node.exe");
+        return {
+          executable: isFile(localNode) ? localNode : process.execPath,
+          args: [scriptPath, ...args],
+          windowsVerbatimArguments: false,
+        };
+      }
+    }
+    const exeMatch = /^@ECHO off[\s\S]*?"%(?:~)?dp0%?[\\/]([^"\r\n]+\.(?:exe|com))"\s+%\*\s*$/i.exec(content);
+    if (exeMatch) {
+      const targetExe = resolve(baseDir, exeMatch[1]);
+      if (isFile(targetExe)) {
+        return {
+          executable: targetExe,
+          args,
+          windowsVerbatimArguments: false,
+        };
+      }
+    }
+    return null;
   } catch {
     return null;
   }
@@ -114,14 +146,8 @@ export function resolveCommandSpec(
   const env = options.env ? { ...process.env, ...options.env } : process.env;
   const resolved = resolveWindowsExecutable(executable, options.cwd ?? process.cwd(), env);
   if (/\.(cmd|bat)$/i.test(resolved)) {
-    const unwrapped = tryUnwrapNodeCmdShim(resolved);
-    if (unwrapped) {
-      return {
-        executable: unwrapped.nodeExecutable,
-        args: [unwrapped.scriptPath, ...args],
-        windowsVerbatimArguments: false,
-      };
-    }
+    const unwrapped = tryUnwrapCmdShim(resolved, args);
+    if (unwrapped) return unwrapped;
     const comspec = env.ComSpec ?? env.COMSPEC ?? process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe";
     const cmdLine = `"${[quoteCmdArg(resolved), ...args.map(quoteCmdArg)].join(" ")}"`;
     return {
