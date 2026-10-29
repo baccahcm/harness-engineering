@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "engineering-harness-0.8.3",
-  "documentNamespace": "https://engineering-harness.local/spdx/engineering-harness/0.8.3/09c25bd16066c7ee5926",
+  "documentNamespace": "https://engineering-harness.local/spdx/engineering-harness/0.8.3/687b2f24696b91a06e6c",
   "creationInfo": {
-    "created": "2026-10-29T07:47:15.390Z",
+    "created": "2026-10-29T08:07:56.238Z",
     "creators": [
       "Tool: engineering-harness"
     ]

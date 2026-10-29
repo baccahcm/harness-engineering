@@ -29,7 +29,7 @@ export class CodexAdapter implements AgentAdapter {
   supportsPurpose(purpose: "developer" | "reviewer" | "planner"): boolean { return purpose === "reviewer" || purpose === "planner"; }
 
   buildCommand(request: AgentRequest): CommandSpec {
-    const base = ["exec", "--json", "--model", request.model, "--sandbox", "read-only", "--ask-for-approval", "never", "-C", request.workspace];
+    const base = ["--ask-for-approval", "never", "exec", "--json", "--model", request.model, "--sandbox", "read-only", "-C", request.workspace];
     if (request.purpose === "developer") {
       throw new Error("CodexAdapter V0.8.3 is read-only for reviewer/planner execution; developer execution is intentionally not enabled.");
     }
