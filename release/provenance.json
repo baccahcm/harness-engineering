@@ -4,8 +4,8 @@
     "name": "engineering-harness",
     "version": "0.8.3"
   },
-  "generatedAt": "2026-10-29T08:07:56.238Z",
-  "sourceDigest": "687b2f24696b91a06e6c0ad56e8cb3576cf1a170ba9cf8f3fafcd96136c8e4e0",
+  "generatedAt": "2026-10-29T08:10:53.305Z",
+  "sourceDigest": "df4739826439b4dca7842aa0688785c710db648f79c6c731c4eb3b97bca87bc0",
   "sourceFiles": [
     {
       "path": "HANDOFF.md",
@@ -429,8 +429,8 @@
     },
     {
       "path": "src/util/command.ts",
-      "sha256": "6b72f49af89a93a13cf9b854ddfe08ddcd697525044e159e47f25f1dacaede2e",
-      "bytes": 5074
+      "sha256": "005e6f9de3710f86d84dd5b0b87eb63dcd0450c1bab4d82092269642f19d723b",
+      "bytes": 6093
     },
     {
       "path": "src/util/yaml.ts",
@@ -585,7 +585,7 @@
   ],
   "git": {
     "repository": true,
-    "head": "04a2c3dc46e1824ff752904e82a3087398630f96",
+    "head": "0cee2095c036b777186398f471d5907eb88c075c",
     "dirty": true
   },
   "build": {
